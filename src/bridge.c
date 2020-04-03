@@ -172,6 +172,24 @@ static void get_dest_addr(unsigned char *buffer, const char *vlan, char *addr, i
     }
 }
 
+static long get_if_count()
+{
+    const char *env = getenv("LANQP_IF_COUNT");
+    char *end_env;
+
+    if (!env){
+        printf("Environment variable LANQP_IF_COUNT not set\n");
+        exit(1);
+    }  
+
+    long if_count = strtol(env, &end_env, 10);
+    if (*env == '\0' || *end_env != '\0') {
+        printf("Environment variable LANQP_IF_COUNT is not a number\n");
+        exit(1);
+    }
+
+    return if_count;
+}
 
 static const char *bridge_get_env(const char *suffix, int idx)
 {
@@ -708,7 +726,6 @@ void bridge_exit()
 
 int bridge_run(const char* address, const char *container, const char *ns_pid)
 {
-    const char *env = getenv("LANQP_IF_COUNT");
     const char* urlstr = NULL;
     pn_connection_t* conn = NULL;
 
@@ -716,13 +733,8 @@ int bridge_run(const char* address, const char *container, const char *ns_pid)
     DEQ_INIT(tunnels);
     lock = sys_mutex();
 
-    if (!env){
-        printf("Environment variable LANQP_IF_COUNT not set\n");
-        exit(1);
-    }  
-
     int idx;
-    tunnel_count = atoi(env);
+    tunnel_count = get_if_count();
 
     for (idx = 0; idx < tunnel_count; idx++){
         tunnel_t *tunnel = bridge_add_tunnel(idx);
